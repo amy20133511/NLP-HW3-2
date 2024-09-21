@@ -1,0 +1,18 @@
+    def count_trigram_events(self, trigram: Trigram) -> None:
+        """Record one token of the trigram and also of its suffixes (for backoff)."""
+        (x, y, z) = trigram
+        self.event_count[(x, y, z )] += 1
+        self.event_count[   (y, z )] += 1
+        self.event_count[      (z,)] += 1  # the comma is necessary to make this a tuple
+        self.event_count[        ()] += 1
+
+    def count_trigram_contexts(self, trigram: Trigram) -> None:
+        """Record one token of the trigram's CONTEXT portion,
+        and also the suffixes of that context (for backoff)."""
+        (x, y, _) = trigram    # we don't care about z
+        self.context_count[(x, y )] += 1
+        self.context_count[   (y,)] += 1
+        self.context_count[     ()] += 1
+
+
+./train_lm.py vocab-genspam.txt add_lambda_backoff --lambda 0.005 ../data/gen_spam/train/gen

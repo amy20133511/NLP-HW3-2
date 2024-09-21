@@ -258,4 +258,40 @@ Give up
 4.
 
 
+4.a
+If we mistakenly took V=19999, we will overestimate the conditional prob of each word.
+This always happens no matter we go wrong with uniform estimate or add-lambda estimate
+
+
+4.b
+if we set lambda=0, we are actually using the naive estimate instead of the add-lambda estimate.
+If our training data is large enough, nothing will go wrong.
+However, if our training data is not large enough, we will underestimate the conditional probs of most words in the vocab to be 0.
+(And overestimate the cond probs of the rest words)
+The most obvious consequence is that, if we have a sentence that contains a trigram that we have never seen before, the prob of this sentence will be 0.
+
+
+4.c
+We are talking about add-lambda smoothing here, instead of add-lambda with-backoff smoothing.
+In this case, if c(xyz)=c(xyz')=1, then p(z|xy)=p(z'|xy)=(1+lambda)/(c(xy)+lambda*V)
+In this case, if c(xyz)=c(xyz')=0, then p(z|xy)=p(z'|xy)=lambda/(c(xy)+lambda*V)
+
+
+4.d
+When lambda is more, the conditional prob estimate p(z|xy) is more like to the back-off prob estimate p(z|y).
+If lambda is infinity, then the conditional prob estimate p(z|xy) is the same as the back-off prob estimate p(z|y).
+
+
+
+
+5.
+Back smoothing is done in probs.py
+Then I run the following command to have a check.
+./train_lm.py vocab-genspam.txt add_lambda_backoff --lambda 0.005 ../data/gen_spam/train/gen
+
+
+
+
+
+6.
 

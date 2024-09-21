@@ -160,35 +160,28 @@ ln -s corpus=spam~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.0005.mode
 Overall cross-entropy:  0.03151 bits per token
 
 ./fileprob.py model_Q3_7 ../data/gen_spam/dev/spam/*
+Overall cross-entropy:  10.26566 bits per token
 
 ./fileprob.py model_Q3_8 ../data/gen_spam/dev/spam/*
+Overall cross-entropy:  9.44152 bits per token
 
 ./fileprob.py model_Q3_9 ../data/gen_spam/dev/spam/*
+Overall cross-entropy:  9.09572 bits per token
 
 ./fileprob.py model_Q3_10 ../data/gen_spam/dev/spam/*
+Overall cross-entropy:  9.41952 bits per token
 
 As we can see, when lambda = {5, 0.5, 0.05, 0.005, 0.0005},
-the minimum cross-entropy per token for spam dev files is when lambda =
+the minimum cross-entropy per token for spam dev files is 9.09572 when lambda = 0.005
 
 
 3.5
-......
+Since both the cross-entropy per token for spam dev files and the cross-entropy per token for gen dev files reaches the minimum when lambda=0.005
+it is pretty clear that lambda* = 0.005.
+We don't even need to calculate overall total cross entropy.
 
 
 3.6
-./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/gen
-./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/spam
-./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/gen-times2
-./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/spam-times2
-./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/gen-times8
-./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/spam-times8
-ln -s corpus=gen~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=1.0.model model_gen
-ln -s corpus=spam~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=1.0.model model_spam
-ln -s corpus=gen-times2~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=1.0.model model_gen_times2
-ln -s corpus=spam-times2~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=1.0.model model_spam_time2
-ln -s corpus=gen-times8~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=1.0.model model_gen_times8
-ln -s corpus=spam-times8~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=1.0.model model_spam_time8
-
 
 
 3.7
@@ -196,6 +189,53 @@ Give up
 
 
 3.8
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/gen
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/spam
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/gen-times2
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/spam-times2
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/gen-times8
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/spam-times8
+ln -s corpus=gen~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_gen
+ln -s corpus=spam~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_spam
+ln -s corpus=gen-times2~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_gen_times2
+ln -s corpus=spam-times2~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_spam_times2
+ln -s corpus=gen-times8~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_gen_times8
+ln -s corpus=spam-times8~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_spam_times8
+
+./textcat.py model_gen model_spam 0.7 ../data/gen_spam/dev/gen/*
+177   files were more probable model_gen   (98.33%)
+3     files were more probable model_spam  (1.67 %)
+./textcat.py model_spam model_spam 0.7 ../data/gen_spam/dev/spam/*
+90    files were more probable model_spam  (100.0%)
+0     files were more probable model_spam  (0.0  %)
+The total accuracy is (0.9833*180+0*90)/(180+90)=0.65
+
+
+./textcat.py model_gen_times2 model_spam_times2 0.7 ../data/gen_spam/dev/gen/*
+177   files were more probable model_gen_times2(98.33%)
+3     files were more probable model_spam_times2(1.67 %)
+./textcat.py model_gen_times2 model_spam_times2 0.7 ../data/gen_spam/dev/spam/*
+16    files were more probable model_gen_times2(17.78%)
+74    files were more probable model_spam_times2(82.22%)
+The total accuracy is (0.9833*180+0.8222*90)/(180+90)=0.92
+
+./textcat.py model_gen_times8 model_spam_times8 0.7 ../data/gen_spam/dev/gen/*
+178   files were more probable model_gen_times8(98.89%)
+2     files were more probable model_spam_times8(1.11 %)
+./textcat.py model_gen_times8 model_spam_times8 0.7 ../data/gen_spam/dev/spam/*
+14    files were more probable model_gen_times8(15.56%)
+76    files were more probable model_spam_times8(84.44%)
+The total accuracy is (0.9889*180+0.8444*90)/(180+90)=0.94
+
+All in all, we can see that when train_size = {1,2,8}, the total accuray = {0.65,0.92,0.94}
+More training data means more accuracy!
+
+The graph is PlotForQuestion3H.png
+I don't expect accuracy to approach 100% when the training size approaches infinity.
+When the training size approaches infinity, we get a more and more accurate likelihood ratio.
+However, our prior ratio 0.7/0.3 is wrong and will not be affected as we have more training data
+As a result, we may never reach 100% accuracy.
+
 
 
 3.9

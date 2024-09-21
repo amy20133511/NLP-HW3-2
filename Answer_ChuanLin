@@ -292,6 +292,34 @@ Then I run the following command to have a check.
 
 
 
-
 6.
+chmod 777 ./trigram_randsent.py
+
+./trigram_randsent.py model_gen 10 --max_length 20
+SUBJECT: &NAME walls volatile environmental wonderful weighing networks Message Diary actual From editing Breakthrough NEED under open staff go no. already
+SUBJECT: Athletics poisonous Online viruses crossed fantastic Graduate recruitment be cake technology meal mobile an fucking record checked calculated according Pro
+SUBJECT: Re : THIS chips attacks talk UNSUBSCRIBE problems parse grey em ' finish November into programme programme Discus TV shopping
+SUBJECT: Re : &NAME &NAME ( &EMAIL ) To : &NAME , &NAME . I 'm here hurdles cater chocolate Online
+SUBJECT: Re : An proved &EMAIL record careful Manager BR) officer begun Careers securities TEEN aging em recipient Only Tuesdays postcard
+SUBJECT: heating warm dialogue overrun -- invite checked deeper range Acoustic Cars lady agreement Now groups science real Linguistic - waste
+SUBJECT: Language arrangements verification variation overuse Photos inside speech crossed Etc. continuous Well organising career contact guitar database fuel chicken decided
+SUBJECT: Re : &NAME &NAME plc or any of Mr. im incredible textbooks today text Service Everyone dinners purchase number 6th
+SUBJECT: &NAME &NAME plc Card Leather signal Not &pound; disease listen Secretary principles 8th enjoy awful AT indicate emails Generic e.g.
+SUBJECT: Training directly plotted spirit WILL spilt between perplexed Looking Our decision Contract his income contents choices Address evil OUR ca
+
+./trigram_randsent.py model_spam 10 --max_length 20
+SUBJECT: Re : hello resolution genre several hello obviously COUNT Arrangements already expressly THIS Guarantee chemistry spikes submit Guarantee else later
+SUBJECT: Re : business chemical FUN22 cycle source card club VICTORY It OUR STOCK Artslife extract control talked results computational hey
+SUBJECT: OOV internet partners guests device producers visiting folders Come Junior lady spent conference growing 27th workplan website grass scientist Incidentally
+SUBJECT: look December intuitive Tomorrow drop Everything certainly area notify grace punctuation link July purchase divided out PROVEN course freezer toilet
+SUBJECT: Forget chatting supplies Under % use needs served Wo overview punctuation Our bye watch Varsity convincing choices dreamed contrary bored
+SUBJECT: &NAME of Medicine meal non-returnable Most 3rd . FRIDAY fancy excited obviously opt remember successful laughing such issued appreciated looming
+SUBJECT: Re : OOV current Week full evil affair Hello ITS destroyed curious discounts Each activate indeed estimate lots Natural handed
+break attempts Securities nltools corresponding disposable define transaction able Acoustic Syndicate browser yourself letter studious yourself spell 16th Both We TEEN
+SUBJECT: &NAME &NAME &WEBSITE Seen couple Using brings via realise grass ARE want finish news walls 9th entrance winning NEW non-returnable
+SUBJECT: Re in. oh will parcel proportionate rooms transferred accept choose Although dead guy treats Do part-time reasonable fattening Send needs
+
+
+We can see that the sentences produced by model_gen usually contains no greeting words such as "Hello" or "hey"
+We can see that the sentences produced by model_spam usually contains a lot of greeting words such as "Hello" or "hey"
 

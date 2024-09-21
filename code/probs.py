@@ -290,6 +290,7 @@ class CountBasedLanguageModel(LanguageModel):
             f"{class_name}.prob is not implemented yet (you should override CountBasedLanguageModel.prob)"
         )
 
+
 class UniformLanguageModel(CountBasedLanguageModel):
     def prob(self, x: Wordtype, y: Wordtype, z: Wordtype) -> float:
         return 1 / self.vocab_size
@@ -303,6 +304,13 @@ class AddLambdaLanguageModel(CountBasedLanguageModel):
         self.lambda_ = lambda_
 
     def prob(self, x: Wordtype, y: Wordtype, z: Wordtype) -> float:
+        assert isinstance(x, Wordtype)
+        if not isinstance(y, Wordtype):
+            print(y)
+        assert isinstance(y, Wordtype)
+        assert isinstance(z, Wordtype)
+        if not self.event_count[x, y, z] <= self.context_count[x, y]:
+            print(x,y,z)
         assert self.event_count[x, y, z] <= self.context_count[x, y]
         return ((self.event_count[x, y, z] + self.lambda_) /
                 (self.context_count[x, y] + self.lambda_ * self.vocab_size))

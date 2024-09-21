@@ -129,8 +129,7 @@ def main():
     log.info("Per-file log-probabilities:")
     total_log_prob = 0.0
     total_n_of_cat1_files = 0
-    max_difference = -np.inf
-    min_difference = np.inf
+    all_tuples = list()
     for file in args.test_files:
         print("for file:", file)
         log_prob1: float = file_log_prob(file, lm1)
@@ -140,24 +139,17 @@ def main():
         predicted_model = args.model1 if log_prob1>=log_prob2 else args.model2
         print(f"{str(predicted_model):<20}{str(file):<20}")
         total_n_of_cat1_files += 1 if log_prob1>=log_prob2 else 0
-        difference = log_prob1 - log_prob2
-        max_difference = difference if difference>max_difference else max_difference
-        min_difference = difference if difference<min_difference else min_difference
-        # print(log_prob1)
-        # print(log_prob2)
-        # print(f"{log_prob:g}\t{file}")
-        # total_log_prob += log_prob
-
-    max_likelihood_ratio = np.exp(max_difference)
-    min_likelihood_ratio = np.exp(min_difference)
+        number_of_tokens = (num_tokens(file))
+        whether_correct = 1 if log_prob2>log_prob1 else 0
+        all_tuples.append((number_of_tokens, whether_correct))
     percent1 = round(total_n_of_cat1_files/len(args.test_files)*100,2)
     percent2 = round((len(args.test_files) - total_n_of_cat1_files) / len(args.test_files) * 100, 2)
     print(f"{total_n_of_cat1_files:<6}files were more probable {str(args.model1):12}({percent1:<5}%)")
     print(f"{len(args.test_files)-total_n_of_cat1_files:<6}files were more probable {str(args.model2):12}({percent2:<5}%)")
-    print(f"max log prob difference is {max_difference}")
-    print(f"min log prob difference is {min_difference}")
-    print(f"max likelihood ratio is {max_likelihood_ratio}")
-    print(f"min likelihood ratio is {min_likelihood_ratio}")
+    print("All the tuples of (file length, whether correct) are as follows:")
+    print(all_tuples)
+
+
     # But cross-entropy is conventionally measured in bits: so when it's
     # time to print cross-entropy, we convert log base e to log base 2,
     # by dividing by log(2).

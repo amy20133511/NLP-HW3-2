@@ -1,0 +1,1 @@
+corpus=gen~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=1.0.model

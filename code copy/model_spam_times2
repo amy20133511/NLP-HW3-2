@@ -1,0 +1,1 @@
+corpus=spam-times2~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model

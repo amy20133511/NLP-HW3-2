@@ -1,0 +1,354 @@
+1.
+
+
+1.1
+./build_vocab.py  ../data/speech/train/switchboard-small  --threshold 3 --output vocab-speech.txt
+./train_lm.py vocab-speech.txt add_lambda --lambda 0.01 ../data/speech/train/switchboard-small
+ln -s corpus=switchboard-small~vocab=vocab-speech.txt~smoother=add_lambda~lambda=0.01.model model_Q1
+./fileprob.py model_Q1 ../data/speech/sample1
+./fileprob.py model_Q1 ../data/speech/sample2
+./fileprob.py model_Q1 ../data/speech/sample3
+
+Here are the results:
+-8282.07        ../data/speech/sample1
+Overall cross-entropy:  7.85052 bits per token
+-5008.97        ../data/speech/sample2
+Overall cross-entropy:  8.30622 bits per token
+-5085.45        ../data/speech/sample3
+Overall cross-entropy:  8.29012 bits per token
+
+As a result,
+the perplexity per word of sample 1 is 2**7.85052=230.803
+the perplexity per word of sample 2 is 2**8.30622=316.534
+the perplexity per word of sample 3 is 2**8.29012=313.021
+
+
+1.2
+./train_lm.py vocab-speech.txt add_lambda --lambda 0.01 ../data/speech/train/switchboard
+ln -s corpus=switchboard~vocab=vocab-speech.txt~smoother=add_lambda~lambda=0.01.model model_Q1_2
+./fileprob.py model_Q1_2 ../data/speech/sample1
+./fileprob.py model_Q1_2 ../data/speech/sample2
+./fileprob.py model_Q1_2 ../data/speech/sample3
+
+The results are
+-6819.01        ../data/speech/sample1
+Overall cross-entropy:  6.46370 bits per token
+-4192.79        ../data/speech/sample2
+Overall cross-entropy:  6.95278 bits per token
+-4195.7 ../data/speech/sample3
+Overall cross-entropy:  6.83969 bits per token
+
+As a result,
+the perplexity per word of sample 1 is 2**6.46370=88.260
+the perplexity per word of sample 2 is 2**6.95278=123.878
+the perplexity per word of sample 3 is 2**6.83969=114.538
+
+We can clearly see that the perplexity per word decreases a lot no matter on sample1, sample2 or sample3.
+The reason is obvious:
+When our LM is trained on a large corpus, it has a better understanding of our language. As a result, when it sees new languages, it is less perplexed.
+
+
+
+
+2.
+./build_vocab.py ../data/gen_spam/train/{gen,spam} --threshold 3 --output vocab-genspam.txt
+./train_lm.py vocab-genspam.txt add_lambda --lambda 1.0 ../data/gen_spam/train/gen
+./train_lm.py vocab-genspam.txt add_lambda --lambda 1.0 ../data/gen_spam/train/spam
+ln -s corpus=gen~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=1.0.model model_Q2_1
+ln -s corpus=spam~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=1.0.model model_Q2_2
+ln -s model_Q2_1 gen.model
+ln -s model_Q2_2 spam.model
+chmod 777 ./textcat.py
+./textcat.py gen.model spam.model 0.7 ../data/gen_spam/dev/{gen,spam}/*
+
+Here is the result:
+247   files were more probable gen.model   (91.48%)
+23    files were more probable spam.model  (8.52 %)
+We checked successfully!
+
+
+
+
+3.
+
+
+3.1.
+./textcat.py gen.model spam.model 0.7 ../data/gen_spam/dev/gen/*
+Here is the result:
+179   files were more probable gen.model   (99.44%)
+1     files were more probable spam.model  (0.56 %)
+So the error rate on gen files is 0.56%
+
+./textcat.py gen.model spam.model 0.7 ../data/gen_spam/dev/spam/*
+Here is the result:
+68    files were more probable gen.model   (75.56%)
+22    files were more probable spam.model  (24.44%)
+So the error rate on spam files is 75.56%
+
+So the total error rate on all dev files is:
+(0.0056*180+0.7556*90)/(180+90)=0.2556
+25.56%
+
+
+3.2
+Give up
+
+
+3.3
+Given a certain file and we want to classify it.
+The ratio (gen to spam) of posterior is the ratio of prior times the ratio of likelihood.
+The maximum of the likelihood ratio over all files tells us how small the prior ratio should be.
+So I revise the textcat.py, and run the following command:
+ ./textcat.py gen.model spam.model 0.7 ../data/gen_spam/dev/{gen,spam}/*
+
+Here is the result
+247   files were more probable gen.model   (91.48%)
+23    files were more probable spam.model  (8.52 %)
+max log prob difference is 1144.3130508249596
+min log prob difference is -2372.214697736643
+max likelihood ratio is inf
+min likelihood ratio is 0.0
+
+Since the max likelihood is inf, we should make prior prob of gen to be 0.
+Only in this case can we classify all dev files as spam
+
+
+3.4.1
+./train_lm.py vocab-genspam.txt add_lambda --lambda 5 ../data/gen_spam/train/gen
+ln -s corpus=gen~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=5.0.model model_Q3_1
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.5 ../data/gen_spam/train/gen
+ln -s corpus=gen~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.5.model model_Q3_2
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.05 ../data/gen_spam/train/gen
+ln -s corpus=gen~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.05.model model_Q3_3
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/gen
+ln -s corpus=gen~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_Q3_4
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.0005 ../data/gen_spam/train/gen
+ln -s  corpus=gen~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.0005.model model_Q3_5
+
+./fileprob.py model_Q3_1 ../data/gen_spam/dev/gen/*
+Overall cross-entropy:  11.05263 bits per token
+
+./fileprob.py model_Q3_2 ../data/gen_spam/dev/gen/*
+Overall cross-entropy:  10.15485 bits per token
+
+./fileprob.py model_Q3_3 ../data/gen_spam/dev/gen/*
+Overall cross-entropy:  9.29458 bits per token
+
+./fileprob.py model_Q3_4 ../data/gen_spam/dev/gen/*
+Overall cross-entropy:  9.04616 bits per token
+
+./fileprob.py model_Q3_5 ../data/gen_spam/dev/gen/*
+Overall cross-entropy:  9.49982 bits per token
+
+As we can see, when lambda = {5, 0.5, 0.05, 0.005, 0.0005},
+the minimum cross-entropy per token for gen dev files is 9.04 when lambda = 0.005
+
+
+3.4.2
+./train_lm.py vocab-genspam.txt add_lambda --lambda 5 ../data/gen_spam/train/spam
+ln -s corpus=spam~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=5.0.model model_Q3_6
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.5 ../data/gen_spam/train/spam
+ln -s corpus=spam~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.5.model model_Q3_7
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.05 ../data/gen_spam/train/spam
+ln -s corpus=spam~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.05.model model_Q3_8
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/spam
+ln -s corpus=spam~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_Q3_9
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.0005 ../data/gen_spam/train/spam
+ln -s corpus=spam~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.0005.model model_Q3_10
+
+./fileprob.py model_Q3_6 ../data/gen_spam/dev/spam/*
+Overall cross-entropy:  0.03151 bits per token
+
+./fileprob.py model_Q3_7 ../data/gen_spam/dev/spam/*
+Overall cross-entropy:  10.26566 bits per token
+
+./fileprob.py model_Q3_8 ../data/gen_spam/dev/spam/*
+Overall cross-entropy:  9.44152 bits per token
+
+./fileprob.py model_Q3_9 ../data/gen_spam/dev/spam/*
+Overall cross-entropy:  9.09572 bits per token
+
+./fileprob.py model_Q3_10 ../data/gen_spam/dev/spam/*
+Overall cross-entropy:  9.41952 bits per token
+
+As we can see, when lambda = {5, 0.5, 0.05, 0.005, 0.0005},
+the minimum cross-entropy per token for spam dev files is 9.09572 when lambda = 0.005
+
+
+3.5
+Since both the cross-entropy per token for spam dev files and the cross-entropy per token for gen dev files reaches the minimum when lambda=0.005
+it is pretty clear that lambda* = 0.005.
+We don't even need to calculate overall total cross entropy.
+
+
+3.6
+To get the answer, we made a new program textcat2.py with more tracking for file-level information.
+And run the following:
+./textcat2.py model_gen_times2 model_spam_times2 0.7 ../data/gen_spam/dev/spam/*
+
+As a experiment result, we have:
+16    files were more probable model_gen_times2(17.78%)
+74    files were more probable model_spam_times2(82.22%)
+All the tuples of (file length, whether correct) are as follows. 
+1 stands for correct, and 0 stands for incorrect.
+[(11, 0), (105, 1), (109, 1), (110, 1), (110, 1), (12, 0), (116, 1), (1159, 1), (1159, 1), (117, 1), (118, 1), (119, 1), (121, 1), (125, 1), (125, 1), (126, 1), (130, 1), (135, 0), (15, 1), (150, 1), (160, 1), (17, 0), (161, 1), (162, 1), (165, 1), (165, 0), (166, 1), (167, 1), (176, 0), (179, 1), (19, 1), (181, 1), (181, 1), (184, 0), (194, 1), (196, 1), (199, 1), (200, 1), (21, 1), (201, 1), (202, 1), (204, 1), (210, 1), (215, 1), (220, 1), (221, 1), (221, 1), (2263, 1), (24, 1), (240, 1), (254, 1), (258, 1), (273, 1), (281, 1), (287, 1), (294, 1), (294, 1), (306, 1), (326, 0), (36, 0), (37, 1), (365, 1), (372, 0), (4064, 1), (4517, 0), (458, 0), (4636, 1), (482, 1), (6, 1), (6, 1), (6, 1), (53, 1), (56, 1), (588, 0), (63, 0), (622, 0), (70, 1), (74, 1), (79, 1), (9, 1), (81, 1), (82, 1), (8186, 1), (88, 1), (90, 1), (10, 1), (92, 0), (93, 1), (95, 1), (99, 1)]
+
+We observe that it's much more likely to misclassify short files as opposed to long files.
+See PlotForQuestion3F.png for a graphical representation of the relationship.
+
+
+3.7
+Give up
+
+
+3.8
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/gen
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/spam
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/gen-times2
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/spam-times2
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/gen-times8
+./train_lm.py vocab-genspam.txt add_lambda --lambda 0.005 ../data/gen_spam/train/spam-times8
+ln -s corpus=gen~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_gen
+ln -s corpus=spam~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_spam
+ln -s corpus=gen-times2~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_gen_times2
+ln -s corpus=spam-times2~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_spam_times2
+ln -s corpus=gen-times8~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_gen_times8
+ln -s corpus=spam-times8~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=0.005.model model_spam_times8
+
+./textcat.py model_gen model_spam 0.7 ../data/gen_spam/dev/gen/*
+177   files were more probable model_gen   (98.33%)
+3     files were more probable model_spam  (1.67 %)
+./textcat.py model_spam model_spam 0.7 ../data/gen_spam/dev/spam/*
+90    files were more probable model_spam  (100.0%)
+0     files were more probable model_spam  (0.0  %)
+The total accuracy is (0.9833*180+0*90)/(180+90)=0.65
+
+
+./textcat.py model_gen_times2 model_spam_times2 0.7 ../data/gen_spam/dev/gen/*
+177   files were more probable model_gen_times2(98.33%)
+3     files were more probable model_spam_times2(1.67 %)
+./textcat.py model_gen_times2 model_spam_times2 0.7 ../data/gen_spam/dev/spam/*
+16    files were more probable model_gen_times2(17.78%)
+74    files were more probable model_spam_times2(82.22%)
+The total accuracy is (0.9833*180+0.8222*90)/(180+90)=0.92
+
+./textcat.py model_gen_times8 model_spam_times8 0.7 ../data/gen_spam/dev/gen/*
+178   files were more probable model_gen_times8(98.89%)
+2     files were more probable model_spam_times8(1.11 %)
+./textcat.py model_gen_times8 model_spam_times8 0.7 ../data/gen_spam/dev/spam/*
+14    files were more probable model_gen_times8(15.56%)
+76    files were more probable model_spam_times8(84.44%)
+The total accuracy is (0.9889*180+0.8444*90)/(180+90)=0.94
+
+All in all, we can see that when train_size = {1,2,8}, the total accuray = {0.65,0.92,0.94}
+More training data means more accuracy!
+See PlotForQuestion3H.png for a graph of the learning curve.
+
+We don't expect accuracy to approach 100% when the training size approaches infinity.
+When the training size approaches infinity, we get a more and more accurate likelihood ratio.
+However, our prior ratio 0.7/0.3 is wrong and will not be affected as we consider more training data.
+As a result, we may never reach 100% accuracy.
+
+
+
+3.9
+Give up
+
+
+
+4.
+
+
+4.a
+If we mistakenly took V=19999, we will overestimate the conditional prob of each word.
+This means the total probability mass won't sum to 1, because we have “forgotten” to allocate probability for the OOV word.
+This problem holds for both uniform estimate and add-lambda estimate.
+For add-lambda, the smoothing effect will also be weaker, because the model thinks there are fewer possible words.
+
+
+4.b
+If we set lambda=0, we would effectively use the relative frequency estimate.
+If our training data is large and comprehensive enough, nothing will go wrong.
+However, if our training data is not large enough, we will underestimate the conditional probs of most words in the vocab to be 0.
+(And overestimate the cond probs of the rest words)
+The most obvious consequence is zero probability for unseen words: if we have a sentence that contains a trigram that we have never seen before, the prob of this sentence will be 0.
+
+
+4.c
+We are talking about add-lambda smoothing here, instead of add-lambda with-backoff smoothing.
+In this case, if c(xyz)=c(xyz')=0, then p(z|xy)=p(z'|xy)=lambda/(c(xy)+lambda*V)
+In this case, if c(xyz)=c(xyz')=1, then p(z|xy)=p(z'|xy)=(1+lambda)/(c(xy)+lambda*V)
+
+
+4.d
+As lambda increases, the relative importance of the trigram count c(xyz) decreases, 
+and the conditional prob estimate p(z|xy) becomes increasingly similar to the back-off prob estimate p(z|y).
+If lambda is infinity, then the conditional prob estimate p(z|xy) is the same as the back-off prob estimate p(z|y).
+The denominator also increases, spreading the probability mass more evenly for all words in the vocabulary.
+
+
+
+5.
+Back smoothing is done in probs.py.
+We can run the following command to check its validity.
+./train_lm.py vocab-genspam.txt add_lambda_backoff --lambda 0.005 ../data/gen_spam/train/gen
+
+
+
+
+6.
+chmod 777 ./trigram_randsent.py
+
+./trigram_randsent.py model_gen 10 --max_length 20
+SUBJECT: &NAME walls volatile environmental wonderful weighing networks Message Diary actual From editing Breakthrough NEED under open staff go no. already
+SUBJECT: Athletics poisonous Online viruses crossed fantastic Graduate recruitment be cake technology meal mobile an fucking record checked calculated according Pro
+SUBJECT: Re : THIS chips attacks talk UNSUBSCRIBE problems parse grey em ' finish November into programme programme Discus TV shopping
+SUBJECT: Re : &NAME &NAME ( &EMAIL ) To : &NAME , &NAME . I 'm here hurdles cater chocolate Online
+SUBJECT: Re : An proved &EMAIL record careful Manager BR) officer begun Careers securities TEEN aging em recipient Only Tuesdays postcard
+SUBJECT: heating warm dialogue overrun -- invite checked deeper range Acoustic Cars lady agreement Now groups science real Linguistic - waste
+SUBJECT: Language arrangements verification variation overuse Photos inside speech crossed Etc. continuous Well organising career contact guitar database fuel chicken decided
+SUBJECT: Re : &NAME &NAME plc or any of Mr. im incredible textbooks today text Service Everyone dinners purchase number 6th
+SUBJECT: &NAME &NAME plc Card Leather signal Not &pound; disease listen Secretary principles 8th enjoy awful AT indicate emails Generic e.g.
+SUBJECT: Training directly plotted spirit WILL spilt between perplexed Looking Our decision Contract his income contents choices Address evil OUR ca
+
+./trigram_randsent.py model_spam 10 --max_length 20
+SUBJECT: Re : hello resolution genre several hello obviously COUNT Arrangements already expressly THIS Guarantee chemistry spikes submit Guarantee else later
+SUBJECT: Re : business chemical FUN22 cycle source card club VICTORY It OUR STOCK Artslife extract control talked results computational hey
+SUBJECT: OOV internet partners guests device producers visiting folders Come Junior lady spent conference growing 27th workplan website grass scientist Incidentally
+SUBJECT: look December intuitive Tomorrow drop Everything certainly area notify grace punctuation link July purchase divided out PROVEN course freezer toilet
+SUBJECT: Forget chatting supplies Under % use needs served Wo overview punctuation Our bye watch Varsity convincing choices dreamed contrary bored
+SUBJECT: &NAME of Medicine meal non-returnable Most 3rd . FRIDAY fancy excited obviously opt remember successful laughing such issued appreciated looming
+SUBJECT: Re : OOV current Week full evil affair Hello ITS destroyed curious discounts Each activate indeed estimate lots Natural handed
+break attempts Securities nltools corresponding disposable define transaction able Acoustic Syndicate browser yourself letter studious yourself spell 16th Both We TEEN
+SUBJECT: &NAME &NAME &WEBSITE Seen couple Using brings via realise grass ARE want finish news walls 9th entrance winning NEW non-returnable
+SUBJECT: Re in. oh will parcel proportionate rooms transferred accept choose Although dead guy treats Do part-time reasonable fattening Send needs
+
+
+We can see that the sentences produced by model_gen usually contains no greeting words such as "Hello" or "hey"
+We can see that the sentences produced by model_spam usually contains a lot of greeting words such as "Hello" or "hey"
+
+
+7.
+
+7.a 
+Implemented class EmbeddingLogLinearLanguageModel and its log_prob function.
+We can do a sanity check using the following command:
+
+./build_vocab.py  ../data/english_spanish/train/en.1k  --threshold 3 --output vocab-en1k.txt
+./train_lm.py ./vocab-en1k.txt log_linear ../data/english_spanish/train/en.1k --lexicon ../lexicons/chars-10.txt --l2_regularization 1
+ln -s corpus=en.1k~vocab=vocab-en1k.txt~smoother=log_linear~lexicon=chars-10.txt~l2=1.0~epochs=10.model model_Q7_2
+
+./train_lm.py vocab-genspam.txt log_linear ../data/gen_spam/train/gen --lexicon ../lexicons/words-gs-only-20.txt --l2_regularization 1
+./train_lm.py vocab-genspam.txt log_linear ../data/gen_spam/train/spam --lexicon ../lexicons/words-gs-20.txt --l2_regularization 0 --device mps
+
+
+./build_vocab.py ../data/gen_spam/train/{gen,spam} --threshold 3 --output vocab-genspam.txt
+
+./train_lm.py vocab-genspam.txt log_linear ../data/gen_spam/train/gen --lexicon ../lexicons/words-gs-only-20.txt --l2_regularization 1
+./train_lm.py vocab-genspam.txt add_lambda --lambda 1.0 ../data/gen_spam/train/spam --lexicon ../lexicons/words-gs-only-20.txt --l2_regularization 1
+ln -s corpus=gen~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=1.0.model model_Q2_1
+ln -s corpus=spam~vocab=vocab-genspam.txt~smoother=add_lambda~lambda=1.0.model model_Q2_2
+ln -s model_Q2_1 gen.model
+ln -s model_Q2_2 spam.model
+chmod 777 ./textcat.py
+./textcat.py gen.model spam.model 0.7 ../data/gen_spam/dev/{gen,spam}/*
